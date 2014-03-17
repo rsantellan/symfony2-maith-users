@@ -1,0 +1,7 @@
+parameters:
+#    maith_common_users.example.class: Maith\Common\UsersBundle\Example
+
+services:
+#    maith_common_users.example:
+#        class: %maith_common_users.example.class%
+#        arguments: [@service_id, "plain_value", %parameter%]
