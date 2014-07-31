@@ -24,6 +24,12 @@ class UserType extends AbstractType
 //                'second_options' => array('label' => 'form.password_confirmation'),
 //                'invalid_message' => 'fos_user.password.mismatch',
 //            ))
+            ->add('Roles', 'entity', array(
+                'class' => 'Maith\Common\UsersBundle\Entity\Role',
+                'property' => 'name',
+                'multiple' => true,
+                'expanded' => false
+              ))
             ->add('enabled', 'checkbox', array(
 				'required'  => false,
 			))

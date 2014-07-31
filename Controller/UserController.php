@@ -41,18 +41,16 @@ class UserController extends Controller
 
         if ($form->isValid()) {
 			$form_data = $form->getData();
-			//var_dump($form->getData());
             $em = $this->getDoctrine()->getManager();
 			$userManager = $this->container->get('fos_user.user_manager');
 			$user = $userManager->createUser();
 			$user->setUsername($form_data->getUsername());
 			$user->setEmail($form_data->getEmail());
-			$user->setPlainPassword(new \DateTime());
+			$user->setPlainPassword(time());
 			$user->setEnabled($form_data->isEnabled());
+            $user->setRoles($form_data->getRoles());
 			$em->persist($user);
 			$em->flush();
-            //$em->persist($entity);
-            //$em->flush();
 			return $this->redirect($this->generateUrl('admin_users_show', array('id' => $user->getId())));
         }
 
@@ -243,7 +241,7 @@ class UserController extends Controller
         return $this->createFormBuilder()
             ->setAction($this->generateUrl('admin_users_delete', array('id' => $id)))
             ->setMethod('DELETE')
-            ->add('submit', 'submit', array('label' => 'Delete'))
+            //->add('submit', 'submit', array('label' => 'Delete'))
             ->getForm()
         ;
     }
