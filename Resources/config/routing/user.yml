@@ -1,34 +1,46 @@
-admin_users:
-    pattern:  /
+user:
+    path:     /
     defaults: { _controller: "MaithCommonUsersBundle:User:index" }
 
-admin_users_show:
-    pattern:  /{id}/show
+user_show:
+    path:     /profile
     defaults: { _controller: "MaithCommonUsersBundle:User:show" }
 
-admin_users_new:
-    pattern:  /new
+user_edit_profile:
+    path:     /profile/editar.html
+    defaults: { _controller: "MaithCommonUsersBundle:User:editProfile" }
+
+user_edit_profile_password:
+    path:     /profile/change-password
+    defaults: { _controller: "MaithCommonUsersBundle:User:editPassword" }
+
+user_edit_profile_email_password:
+    path:     /profile/change-email-password
+    defaults: { _controller: "MaithCommonUsersBundle:User:editEmailPassword" }
+    
+user_new:
+    path:     /new
     defaults: { _controller: "MaithCommonUsersBundle:User:new" }
 
-admin_users_create:
-    pattern:  /create
+user_create:
+    path:     /create
     defaults: { _controller: "MaithCommonUsersBundle:User:create" }
     requirements: { _method: post }
 
-admin_users_edit:
-    pattern:  /{id}/edit
+user_edit:
+    path:     /{id}/edit
     defaults: { _controller: "MaithCommonUsersBundle:User:edit" }
 
-admin_users_update:
-    pattern:  /{id}/update
+user_update:
+    path:     /{id}/update
     defaults: { _controller: "MaithCommonUsersBundle:User:update" }
     requirements: { _method: post|put }
 
-admin_users_delete:
-    pattern:  /{id}/delete
+user_delete:
+    path:     /{id}/delete
     defaults: { _controller: "MaithCommonUsersBundle:User:delete" }
     requirements: { _method: post|delete }
 
-admin_users_reset_password:
-    pattern:  /{id}/resetpassword.html
-    defaults: { _controller: "MaithCommonUsersBundle:User:sendChangePasswordEmail" }
+user_block_unblock:
+    path:     /{id}/{status}/block-unblock
+    defaults: { _controller: "MaithCommonUsersBundle:User:blockUnblock" }

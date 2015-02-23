@@ -6,7 +6,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
-class UserType extends AbstractType
+class GroupRoleType extends AbstractType
 {
         /**
      * @param FormBuilderInterface $builder
@@ -15,14 +15,9 @@ class UserType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('email', 'email', array('label' => 'form.email', 'translation_domain' => 'FOSUserBundle'))
-            ->add('fullName')
-            //->add('user_roles')
-            ->add('user_groups', null, array(
-                  'required' => false,
-                  'multiple' => true, 
-                  'expanded' => true
-                ))
+            ->add('name')
+            //->add('users')
+            ->add('groupRoles', null, array('required' => false))
         ;
     }
     
@@ -32,7 +27,7 @@ class UserType extends AbstractType
     public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
         $resolver->setDefaults(array(
-            'data_class' => 'Maith\Common\UsersBundle\Entity\User'
+            'data_class' => 'Maith\Common\UsersBundle\Entity\GroupRole'
         ));
     }
 
@@ -41,6 +36,6 @@ class UserType extends AbstractType
      */
     public function getName()
     {
-        return 'maith_userbundle_user';
+        return 'maith_userbundle_grouprole';
     }
 }

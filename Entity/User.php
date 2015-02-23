@@ -5,11 +5,15 @@ namespace Maith\Common\UsersBundle\Entity;
 use FOS\UserBundle\Model\User as BaseUser;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
+ * Description of User
+ *
  * @ORM\Entity
  * @ORM\Table(name="maith_user")
- *
+ * @UniqueEntity("email")
  * @author Rodrigo Santellan
  */
 class User extends BaseUser{
@@ -25,15 +29,29 @@ class User extends BaseUser{
 
 
     /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var String
+     */
+    protected $fullName;
+    
+    /**
      * @ORM\ManyToMany(targetEntity="Role", indexBy="name", inversedBy="users")
      * @ORM\JoinTable(name="maith_users_roles")
      */
     protected $user_roles;
 
 
+    /**
+     * @ORM\ManyToMany(targetEntity="GroupRole", indexBy="name", inversedBy="users")
+     * @ORM\JoinTable(name="maith_groups_users")
+     */
+    protected $user_groups;
+    
+    
     function __construct() {
       parent::__construct();
       $this->user_roles = new ArrayCollection();
+      $this->user_groups = new ArrayCollection();
     }
 
 
@@ -89,12 +107,22 @@ class User extends BaseUser{
      * @param Role $role
      */
     public function addRole($role) {
-        if (!$role instanceof Role) {
-            throw new \Exception("addRole takes a Role object as the parameter");
+        if(is_string($role))
+        {
+          parent::addRole($role);
         }
-        if (!$this->hasRole($role->getRole())) {
-            $this->user_roles->add($role);
+        else
+        {
+          if($role instanceof Role)
+          {
+            if (!$this->hasRole($role->getRole())) {
+              $this->user_roles->add($role);
+            }
+          }else{
+            throw new \Exception(sprintf("addRole takes a Role object as the parameter. %s given", get_class($role)));
+          }
         }
+        
     }
 
     /**
@@ -115,9 +143,13 @@ class User extends BaseUser{
      */
     public function setRoles(array $roles) {
         $this->user_roles->clear();
+        $parentRoles = array();
         foreach ($roles as $role) {
             $this->addRole($role);
+            $parentRoles[] = $role->getName();
         }
+        parent::setRoles($parentRoles);
+        
     }
 
     /**
@@ -148,4 +180,119 @@ class User extends BaseUser{
         return $this->credentialsExpireAt;
     }
     
+    /**
+     * Add user_roles
+     *
+     * @param \Maith\Common\UsersBundle\Entity\Role $userRoles
+     * @return User
+     */
+    public function addUserRole(\Maith\Common\UsersBundle\Entity\Role $userRoles)
+    {
+        $this->user_roles[] = $userRoles;
+
+        return $this;
+    }
+
+    /**
+     * Remove user_roles
+     *
+     * @param \Maith\Common\UsersBundle\Entity\Role $userRoles
+     */
+    public function removeUserRole(\Maith\Common\UsersBundle\Entity\Role $userRoles)
+    {
+        $this->user_roles->removeElement($userRoles);
+    }
+
+    /**
+     * Get user_roles
+     *
+     * @return \Doctrine\Common\Collections\Collection 
+     */
+    public function getUserRoles()
+    {
+        return $this->user_roles;
+    }
+
+    /**
+     * Add user_groups
+     *
+     * @param \Maith\Common\UsersBundle\Entity\GroupRole $userGroups
+     * @return User
+     */
+    public function addUserGroup(\Maith\Common\UsersBundle\Entity\GroupRole $userGroups)
+    {
+        $this->user_groups[] = $userGroups;
+        /*
+        foreach($userGroups->getGroupRoles() as $role)
+        {
+          $this->addRole($role);
+        }
+        */
+        return $this;
+    }
+
+    
+    public function fixtureAddUserGroup(\Maith\Common\UsersBundle\Entity\GroupRole $userGroups)
+    {
+        $this->user_groups[] = $userGroups;
+        
+        foreach($userGroups->getGroupRoles() as $role)
+        {
+          $this->addRole($role);
+        }
+        
+        return $this;
+    }
+    /**
+     * Remove user_groups
+     *
+     * @param \Maith\Common\UsersBundle\Entity\GroupRole $userGroups
+     */
+    public function removeUserGroup(\Maith\Common\UsersBundle\Entity\GroupRole $userGroups)
+    {
+        $this->user_groups->removeElement($userGroups);
+    }
+
+    /**
+     * Get user_groups
+     *
+     * @return \Doctrine\Common\Collections\Collection 
+     */
+    public function getUserGroups()
+    {
+        return $this->user_groups;
+    }
+    
+    /**
+     * @param ArrayCollection $user_groups Of UserGroup objects.
+     */
+    public function setUserGroups(Collection $groups) {
+        $this->user_groups->clear();
+        foreach ($groups as $group) {
+            $this->addUserGroup($group);
+        }
+    }    
+
+    /**
+     * Set fullName
+     *
+     * @param string $fullName
+     * @return User
+     */
+    public function setFullName($fullName)
+    {
+        $this->fullName = $fullName;
+
+        return $this;
+    }
+
+    /**
+     * Get fullName
+     *
+     * @return string 
+     */
+    public function getFullName()
+    {
+        return $this->fullName;
+    }
 }

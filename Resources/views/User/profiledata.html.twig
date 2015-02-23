@@ -1,0 +1,33 @@
+<!-- profile information sidebar -->
+<aside class="canvas-right sidebar-300 bg-default">
+  <div class="content-wrap">
+	<div class="profile pd-l-md pd-r-md pd-b-lg">
+	  <div class="row">
+		<div class="col-xs-12 text-center mg-t-md">
+		  <div class="h4 no-margin">{{ user.fullName }}</div>
+		</div>
+	  </div>
+
+	  <div class="row">
+		<div class="col-xs-12 mg-b-sm">
+		  {% trans %}users_email{% endtrans %}
+		  <span class="pull-right">{{ user.email }}</span>
+		</div>
+		<div class="col-xs-12">
+		  {% trans %}users_permission_groups{% endtrans %}
+		  <span class="pull-right">{{ user.userGroups | join(',') }}</span>
+		</div>  
+		<hr>
+		<div class="col-xs-12 mg-t-lg">
+		  <a href="javascript:void(0)" onclick="bringEditProfile('{{path('user_edit_profile')}}');" class="btn btn-primary pull-right">{% trans %}users_edit{% endtrans %}</a>
+		  <div style='clear:both !important;'></div>
+          <a href="javascript:void(0)" onclick="bringEditProfile('{{path('user_edit_profile_password')}}');" class="btn btn-warning pull-right mg-t-lg">Cambiar contraseña <br/>del usuario.{#{% trans %}users_change_password{% endtrans %}#}</a>
+          <div style='clear:both !important;'></div>
+		</div>
+		
+	  </div>
+	</div>
+  </div>
+</aside>
+<!-- /profile information sidebar -->
+

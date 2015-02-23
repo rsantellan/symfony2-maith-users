@@ -5,8 +5,9 @@ namespace Maith\Common\UsersBundle\Form;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\Security\Core\Validator\Constraints\UserPassword;
 
-class UserType extends AbstractType
+class UserProfileType extends AbstractType
 {
         /**
      * @param FormBuilderInterface $builder
@@ -17,12 +18,6 @@ class UserType extends AbstractType
         $builder
             ->add('email', 'email', array('label' => 'form.email', 'translation_domain' => 'FOSUserBundle'))
             ->add('fullName')
-            //->add('user_roles')
-            ->add('user_groups', null, array(
-                  'required' => false,
-                  'multiple' => true, 
-                  'expanded' => true
-                ))
         ;
     }
     
@@ -41,6 +36,6 @@ class UserType extends AbstractType
      */
     public function getName()
     {
-        return 'maith_userbundle_user';
+        return 'maith_userbundle_profile';
     }
 }

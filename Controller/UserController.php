@@ -7,6 +7,16 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 
 use Maith\Common\UsersBundle\Entity\User;
 use Maith\Common\UsersBundle\Form\UserType;
+use Maith\Common\UsersBundle\Form\UserProfileType;
+use Maith\Common\UsersBundle\Form\UserPasswordType;
+use Maith\Common\UsersBundle\Form\UserEmailPasswordType;
+
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use FOS\UserBundle\Model\UserInterface;
+use FOS\UserBundle\FOSUserEvents;
+use FOS\UserBundle\Event\FormEvent;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use JMS\SecurityExtraBundle\Annotation\Secure;
 
 /**
  * User controller.
@@ -18,6 +28,7 @@ class UserController extends Controller
     /**
      * Lists all User entities.
      *
+	 * @Secure(roles="ROLE_VIEW_USERS")
      */
     public function indexAction()
     {
@@ -26,12 +37,14 @@ class UserController extends Controller
         $entities = $em->getRepository('MaithCommonUsersBundle:User')->findAll();
 
         return $this->render('MaithCommonUsersBundle:User:index.html.twig', array(
-            'entities' => $entities,
+            'entities' => $entities, 
+            'activemenu' => 'users',
+            'activesubmenu' => 'users',
         ));
     }
     /**
      * Creates a new User entity.
-     *
+     * @Secure(roles="ROLE_ADD_EDIT_USERS")
      */
     public function createAction(Request $request)
     {
@@ -40,102 +53,258 @@ class UserController extends Controller
         $form->handleRequest($request);
 
         if ($form->isValid()) {
-			$form_data = $form->getData();
+            $form_data = $form->getData();
             $em = $this->getDoctrine()->getManager();
-			$userManager = $this->container->get('fos_user.user_manager');
+            $userManager = $this->container->get('fos_user.user_manager');
 			$user = $userManager->createUser();
-			$user->setUsername($form_data->getUsername());
+			$user->setUsername($form_data->getEmail());
+			$user->setFullName($form_data->getFullName());
 			$user->setEmail($form_data->getEmail());
-			$user->setPlainPassword(time());
+			$user->setPlainPassword('NuevaPass1234');
 			$user->setEnabled($form_data->isEnabled());
-            $user->setRoles($form_data->getRoles());
+			$user->setUserGroups($form_data->getUserGroups());
+			$token = sha1(uniqid(mt_rand(), true)); // Or whatever you prefer to generate a token
+			$user->setConfirmationToken($token);
+			$userRoles = array();
+			foreach($form_data->getUserGroups() as $userGroup)
+			{
+			  foreach($userGroup->getGroupRoles() as $role)
+			  {
+				$userRoles[] = $role;
+			  }
+			}
+			$user->setRoles($userRoles);
 			$em->persist($user);
+            //die;
 			$em->flush();
-			return $this->redirect($this->generateUrl('admin_users_show', array('id' => $user->getId())));
+            //$mailer = $this->container->get('fos_user.mailer');
+            //$mailer->sendConfirmationEmailMessage($user);
+            $formFactory = $this->get('fos_user.registration.form.factory');
+            $form = $formFactory->createForm();
+            $form->setData($user); // created user object
+            $event = new FormEvent($form, $request); // request of the Controller
+            $dispatcher = $this->get('event_dispatcher');
+            $dispatcher->dispatch(FOSUserEvents::REGISTRATION_SUCCESS, $event);
+            
+            $this->get('session')->getFlashBag()->add('notif-success', 'Usuario creado con exito');
+            return $this->redirect($this->generateUrl('user_edit', array('id' => $user->getId())));
+        }
+        else
+        {
+          $this->get('session')->getFlashBag()->add('notif-error', 'A ocurrido un error con el formulario. Revisa los campos.');
         }
 
         return $this->render('MaithCommonUsersBundle:User:new.html.twig', array(
             'entity' => $entity,
             'form'   => $form->createView(),
+            'activemenu' => 'users',
+            'activesubmenu' => 'users',
         ));
     }
 
     /**
-    * Creates a form to create a User entity.
-    *
-    * @param User $entity The entity
-    *
-    * @return \Symfony\Component\Form\Form The form
-    */
+     * Creates a form to create a User entity.
+     *
+     * @param User $entity The entity
+     *
+     * @return \Symfony\Component\Form\Form The form
+     */
     private function createCreateForm(User $entity)
     {
-        
         $form = $this->createForm(new UserType(), $entity, array(
-            'action' => $this->generateUrl('admin_users_create'),
+            'action' => $this->generateUrl('user_create'),
             'method' => 'POST',
         ));
 
-        $form->add('submit', 'submit', array('label' => 'Create'));
-
         return $form;
     }
-	
-	private function getUsedRoles()
-	{
-		$roles = $this->container->getParameter('security.role_hierarchy.roles');
-        $used_roles = array();
-        foreach($roles as $role => $childs)
-        {
-            $used_roles[$role] = $role;
-            if(is_array($childs))
-            {
-                foreach($childs as $child)
-                {
-                    $used_roles[$child] = $child;
-                }
-            }
-        }
-		return $used_roles;
-	}
 
     /**
      * Displays a form to create a new User entity.
-     *
+     * 
+	 * @Secure(roles="ROLE_ADD_EDIT_USERS")
      */
     public function newAction()
     {
         $entity = new User();
         $form   = $this->createCreateForm($entity);
+
         return $this->render('MaithCommonUsersBundle:User:new.html.twig', array(
             'entity' => $entity,
             'form'   => $form->createView(),
+            'activemenu' => 'users',
+            'activesubmenu' => 'users',
         ));
     }
 
     /**
      * Finds and displays a User entity.
      *
+	 * 
      */
-    public function showAction($id)
+    public function showAction()
     {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository('MaithCommonUsersBundle:User')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find User entity.');
+		$user = $this->container->get('security.context')->getToken()->getUser();
+        if (!is_object($user) || !$user instanceof UserInterface) {
+            throw new AccessDeniedException('This user does not have access to this section.');
         }
-
-        $deleteForm = $this->createDeleteForm($id);
-
+		
         return $this->render('MaithCommonUsersBundle:User:show.html.twig', array(
-            'entity'      => $entity,
-            'delete_form' => $deleteForm->createView(),        ));
+            'user' => $user
+        ));
     }
 
     /**
+     * Finds and displays a User entity.
+     * 
+     */
+    public function editProfileAction(Request $request)
+    {
+		$user = $this->container->get('security.context')->getToken()->getUser();
+        if (!is_object($user) || !$user instanceof UserInterface) {
+            throw new AccessDeniedException('This user does not have access to this section.');
+        }
+		
+		$form = $this->createForm(new UserProfileType(), $user, array(
+            'method' => 'POST',
+        ));
+		if ('PUT' === $request->getMethod() || 'POST' === $request->getMethod()) {
+		  $form->bind($request);
+		  if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($user);
+			$em->flush();
+            $response = new JsonResponse();
+            $profileShow = $this->renderView('MaithCommonUsersBundle:User:profiledata.html.twig', array(
+                'user' => $user
+            ));
+            $response->setData(array('result' => 'OK', 'viewshow' => $profileShow));
+            return $response;
+			//$userManager = $this->container->get('fos_user.user_manager');
+			//$userManager->updateUser($user);
+		  }
+          else{
+            $response = new JsonResponse();
+            $view = $this->renderView('MaithCommonUsersBundle:User:profileedit.html.twig', array(
+                'entity' => $user,
+                'edit_form'   => $form->createView(),
+            ));
+            $response->setData(array('result' => 'ERROR', 'view' => $view));
+            
+            return $response;
+          }
+		}
+		$response = new JsonResponse();
+        $view = $this->renderView('MaithCommonUsersBundle:User:profileedit.html.twig', array(
+                'entity' => $user,
+                'edit_form'   => $form->createView(),
+            ));
+        $response->setData(array('result' => 'OK' , 'view' => $view));
+        return $response;
+    }
+
+    
+    /**
+     * Finds and displays a User entity.
+     * 
+     */
+    public function editEmailPasswordAction(Request $request)
+    {
+		$user = $this->container->get('security.context')->getToken()->getUser();
+        if (!is_object($user) || !$user instanceof UserInterface) {
+            throw new AccessDeniedException('This user does not have access to this section.');
+        }
+		
+		$form = $this->createForm(new UserEmailPasswordType(), $user, array(
+            'method' => 'POST',
+        ));
+		if ('PUT' === $request->getMethod() || 'POST' === $request->getMethod()) {
+		  $form->bind($request);
+		  if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($user);
+			$em->flush();
+            $response = new JsonResponse();
+            $profileShow = $this->renderView('MaithCommonUsersBundle:User:profiledata.html.twig', array(
+                'user' => $user
+            ));
+            $response->setData(array('result' => 'OK', 'viewshow' => $profileShow));
+            return $response;
+			//$userManager = $this->container->get('fos_user.user_manager');
+			//$userManager->updateUser($user);
+		  }
+          else{
+            $response = new JsonResponse();
+            $view = $this->renderView('MaithCommonUsersBundle:User:profileeditemailpassword.html.twig', array(
+                'entity' => $user,
+                'edit_form'   => $form->createView(),
+            ));
+            $response->setData(array('result' => 'ERROR', 'view' => $view));
+            
+            return $response;
+          }
+		}
+		$response = new JsonResponse();
+        $view = $this->renderView('MaithCommonUsersBundle:User:profileeditemailpassword.html.twig', array(
+                'entity' => $user,
+                'edit_form'   => $form->createView(),
+            ));
+        $response->setData(array('result' => 'OK' , 'view' => $view));
+        return $response;
+    }
+    
+    /**
+     * Finds and displays a User entity.
+     * 
+     */
+    public function editPasswordAction(Request $request)
+    {
+		$user = $this->container->get('security.context')->getToken()->getUser();
+        if (!is_object($user) || !$user instanceof UserInterface) {
+            throw new AccessDeniedException('This user does not have access to this section.');
+        }
+		
+		$form = $this->createForm(new UserPasswordType(), $user, array(
+            'method' => 'POST',
+        ));
+		if ('PUT' === $request->getMethod() || 'POST' === $request->getMethod()) {
+		  $form->bind($request);
+		  if ($form->isValid()) {
+            $userManager = $this->container->get('fos_user.user_manager');
+            $userManager->updateUser($user);
+            $response = new JsonResponse();
+            $profileShow = $this->renderView('MaithCommonUsersBundle:User:profiledata.html.twig', array(
+                'user' => $user
+            ));
+            $response->setData(array('result' => 'OK', 'viewshow' => $profileShow));
+            return $response;
+			//$userManager = $this->container->get('fos_user.user_manager');
+			//$userManager->updateUser($user);
+		  }
+          else{
+            $response = new JsonResponse();
+            $view = $this->renderView('MaithCommonUsersBundle:User:profileeditpassword.html.twig', array(
+                'entity' => $user,
+                'edit_form'   => $form->createView(),
+            ));
+            $response->setData(array('result' => 'ERROR', 'view' => $view));
+            
+            return $response;
+          }
+		}
+		$response = new JsonResponse();
+        $view = $this->renderView('MaithCommonUsersBundle:User:profileeditpassword.html.twig', array(
+                'entity' => $user,
+                'edit_form'   => $form->createView(),
+            ));
+        $response->setData(array('result' => 'OK' , 'view' => $view));
+        return $response;
+    }
+    
+    /**
      * Displays a form to edit an existing User entity.
      *
+	 * @Secure(roles="ROLE_ADD_EDIT_USERS")
      */
     public function editAction($id)
     {
@@ -154,6 +323,8 @@ class UserController extends Controller
             'entity'      => $entity,
             'edit_form'   => $editForm->createView(),
             'delete_form' => $deleteForm->createView(),
+            'activemenu' => 'users',
+            'activesubmenu' => 'users',
         ));
     }
 
@@ -167,17 +338,16 @@ class UserController extends Controller
     private function createEditForm(User $entity)
     {
         $form = $this->createForm(new UserType(), $entity, array(
-            'action' => $this->generateUrl('admin_users_update', array('id' => $entity->getId())),
+            'action' => $this->generateUrl('user_update', array('id' => $entity->getId())),
             'method' => 'PUT',
         ));
-
-        $form->add('submit', 'submit', array('label' => 'Update'));
 
         return $form;
     }
     /**
      * Edits an existing User entity.
      *
+	 * @Secure(roles="ROLE_ADD_EDIT_USERS")
      */
     public function updateAction(Request $request, $id)
     {
@@ -194,20 +364,35 @@ class UserController extends Controller
         $editForm->handleRequest($request);
 
         if ($editForm->isValid()) {
+			$form_data = $editForm->getData();
+			$userRoles = array();
+			foreach($form_data->getUserGroups() as $userGroup)
+			{
+			  foreach($userGroup->getGroupRoles() as $role)
+			  {
+				$userRoles[] = $role;
+			  }
+			}
+			$entity->setRoles($userRoles);
             $em->flush();
-
-            return $this->redirect($this->generateUrl('admin_users_edit', array('id' => $id)));
+            $this->get('session')->getFlashBag()->add('notif-success', 'Usuario editado con exito');
+            return $this->redirect($this->generateUrl('user_edit', array('id' => $id)));
+        }else{
+          $this->get('session')->getFlashBag()->add('notif-error', 'A ocurrido un error con el formulario. Revisa los campos.');
         }
 
         return $this->render('MaithCommonUsersBundle:User:edit.html.twig', array(
             'entity'      => $entity,
             'edit_form'   => $editForm->createView(),
             'delete_form' => $deleteForm->createView(),
+            'activemenu' => 'users',
+            'activesubmenu' => 'users',
         ));
     }
     /**
      * Deletes a User entity.
      *
+	 * @Secure(roles="ROLE_REMOVE_USERS")
      */
     public function deleteAction(Request $request, $id)
     {
@@ -226,7 +411,7 @@ class UserController extends Controller
             $em->flush();
         }
 
-        return $this->redirect($this->generateUrl('admin_users'));
+        return $this->redirect($this->generateUrl('user'));
     }
 
     /**
@@ -239,60 +424,41 @@ class UserController extends Controller
     private function createDeleteForm($id)
     {
         return $this->createFormBuilder()
-            ->setAction($this->generateUrl('admin_users_delete', array('id' => $id)))
+            ->setAction($this->generateUrl('user_delete', array('id' => $id)))
             ->setMethod('DELETE')
-            //->add('submit', 'submit', array('label' => 'Delete'))
             ->getForm()
         ;
     }
-	
-	const SESSION_EMAIL = 'fos_user_send_resetting_email/email';
-	
-	/**
-     * Get the truncated email displayed when requesting the resetting.
-     *
-     * The default implementation only keeps the part following @ in the address.
-     *
-     * @param \FOS\UserBundle\Model\UserInterface $user
-     *
-     * @return string
-     */
-    protected function getObfuscatedEmail(User $user)
+    
+    public function blockUnblockAction($id, $status)
     {
-        $email = $user->getEmail();
-        if (false !== $pos = strpos($email, '@')) {
-            $email = '...' . substr($email, $pos);
+        $user = $this->container->get('security.context')->getToken()->getUser();
+        if (!is_object($user) || !$user instanceof UserInterface) {
+            throw new AccessDeniedException('This user does not have access to this section.');
         }
-
-        return $email;
+        if($user->getId() != $id)
+        {
+            $em = $this->getDoctrine()->getManager();
+            $entity = $em->getRepository('MaithCommonUsersBundle:User')->find($id);
+            $message = "";
+            if((int)$status == 0)
+            {
+                $message = "Usuario bloqueado con exito";
+                $entity->setLocked(true);
+            }
+            else
+            {
+                $message = "Usuario desbloqueado con exito";
+                $entity->setLocked(false);
+            }
+            
+            $userManager = $this->container->get('fos_user.user_manager');
+            $userManager->updateUser($entity);
+            $this->get('session')->getFlashBag()->add('notif-success', $message);
+        }else{
+          $this->get('session')->getFlashBag()->add('notif-error', 'No puede bloquearte a ti mismo');
+        }
+        
+        return $this->redirect($this->generateUrl('user', array()));
     }
-	
-	public function sendChangePasswordEmailAction($id)
-	{
-		$em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository('MaithCommonUsersBundle:User')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find User entity.');
-        }
-		$username = $entity->getUsername();
-		/** @var $user UserInterface */
-        $userInterface = $this->container->get('fos_user.user_manager')->findUserByUsernameOrEmail($username);
-
-        if (null === $userInterface) {
-            throw $this->createNotFoundException('Unable to find User entity.');
-        }
-
-        if (null === $userInterface->getConfirmationToken()) {
-            /** @var $tokenGenerator \FOS\UserBundle\Util\TokenGeneratorInterface */
-            $tokenGenerator = $this->container->get('fos_user.util.token_generator');
-            $userInterface->setConfirmationToken($tokenGenerator->generateToken());
-        }
-
-        $this->container->get('session')->set(static::SESSION_EMAIL, $this->getObfuscatedEmail($userInterface));
-        $this->container->get('fos_user.mailer')->sendResettingEmailMessage($userInterface);
-        $userInterface->setPasswordRequestedAt(new \DateTime());
-        $this->container->get('fos_user.user_manager')->updateUser($userInterface);
-	}
 }
