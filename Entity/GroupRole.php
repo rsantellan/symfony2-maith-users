@@ -37,7 +37,7 @@ class GroupRole {
 
   /**
    * @ORM\ManyToMany(targetEntity="Role", indexBy="name", inversedBy="groups")
-   * @ORM\JoinTable(name="maith_tekoa_groups_roles")
+   * @ORM\JoinTable(name="maith_groups_roles")
    */
   protected $groupRoles;
 
