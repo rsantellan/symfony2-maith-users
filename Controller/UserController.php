@@ -79,13 +79,14 @@ class UserController extends Controller
 			$em->flush();
             //$mailer = $this->container->get('fos_user.mailer');
             //$mailer->sendConfirmationEmailMessage($user);
+            /*
             $formFactory = $this->get('fos_user.registration.form.factory');
             $form = $formFactory->createForm();
             $form->setData($user); // created user object
             $event = new FormEvent($form, $request); // request of the Controller
             $dispatcher = $this->get('event_dispatcher');
             $dispatcher->dispatch(FOSUserEvents::REGISTRATION_SUCCESS, $event);
-            
+            */
             $this->get('session')->getFlashBag()->add('notif-success', 'Usuario creado con exito');
             return $this->redirect($this->generateUrl('user_edit', array('id' => $user->getId())));
         }
