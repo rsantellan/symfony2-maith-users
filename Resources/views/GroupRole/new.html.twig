@@ -1,0 +1,35 @@
+{% extends 'MaithCommonUsersBundle::adminlayout.html.twig' %}
+
+{% block body -%}
+<div class="row">
+  <div class="col-lg-8">
+	<section class="panel">
+	  <header class="panel-heading">{% trans %}permission_group_create_entry{% endtrans %}</header>
+	  <div class="panel-body">
+		<form action="{{ path('grouprole_create') }}" method="post" {{ form_enctype(form) }} role="form">
+		  <div class="form-group">
+			  {{ form_errors(form.name) }}
+			  <label for="{{ form.name.vars.id }}">{% trans %}permission_group_name{% endtrans %}</label>
+			  {{ form_widget(form.name, {'attr' : {'class' : 'form-control'}}) }}
+			</div>
+			<div class="form-group">
+			  {{ form_errors(form.groupRoles) }}
+			  <label for="{{ form.groupRoles.vars.id }}">{% trans %}permission_group_roles{% endtrans %}</label>
+			  {{ form_widget(form.groupRoles, {'attr' : {'class' : 'form-control'}}) }}
+			</div>
+			  <div class="form-group">
+				<button type="submit" class="btn btn-default">{% trans %}permission_group_save{% endtrans %}</button>
+			  </div>	
+				{{ form_rest(form) }}
+			</form>
+		  </div>
+		</section>
+	  </div>
+	  <div class="col-lg-12 text-center">
+		<a href="{{ path('grouprole') }}" class="btn btn-info">
+			{% trans %}permission_group_back_to_list{% endtrans %}
+		  </a>
+		</div>
+	  </div>
+
+{% endblock %}

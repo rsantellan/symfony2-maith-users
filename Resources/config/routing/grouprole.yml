@@ -1,0 +1,30 @@
+grouprole:
+    path:     /
+    defaults: { _controller: "MaithCommonUsersBundle:GroupRole:index" }
+
+grouprole_show:
+    path:     /{id}/show
+    defaults: { _controller: "MaithCommonUsersBundle:GroupRole:show" }
+
+grouprole_new:
+    path:     /new
+    defaults: { _controller: "MaithCommonUsersBundle:GroupRole:new" }
+
+grouprole_create:
+    path:     /create
+    defaults: { _controller: "MaithCommonUsersBundle:GroupRole:create" }
+    requirements: { _method: post }
+
+grouprole_edit:
+    path:     /{id}/edit
+    defaults: { _controller: "MaithCommonUsersBundle:GroupRole:edit" }
+
+grouprole_update:
+    path:     /{id}/update
+    defaults: { _controller: "MaithCommonUsersBundle:GroupRole:update" }
+    requirements: { _method: post|put }
+
+grouprole_delete:
+    path:     /{id}/delete
+    defaults: { _controller: "MaithCommonUsersBundle:GroupRole:delete" }
+    requirements: { _method: post|delete }

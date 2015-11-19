@@ -1,0 +1,58 @@
+{% extends 'MaithCommonUsersBundle::adminlayout.html.twig' %}
+
+{% block pagestylesheets %}
+<link rel="stylesheet" href="{{ asset('bundles/maithcommonadmin/admin/vendor/chosen/chosen.min.css') }}">
+<link rel="stylesheet" href="{{ asset('bundles/maithcommonadmin/admin/vendor/datatables/jquery.dataTables.css') }}">
+{% endblock %}
+
+{% block javascripts %}
+<script src="{{ asset('bundles/maithcommonadmin/admin/vendor/chosen/chosen.jquery.min.js') }}"></script>
+<script src="{{ asset('bundles/maithcommonadmin/admin/vendor/datatables/jquery.dataTables.js') }}"></script>
+<script src="{{ asset('bundles/maithcommonadmin/admin/js/datatables.js') }}"></script>
+{% endblock %}
+
+{% block body -%}
+<section class="panel">
+  <header class="panel-heading">{% trans %}permission_group_title{% endtrans %}</header>
+  <div class="panel-body">
+	<div class="table-responsive no-border">
+	  <table class="table table-bordered table-striped mg-t datatable">
+		<thead>
+		  <tr>
+			<th>{% trans %}permission_group_name{% endtrans %}</th>
+			<th>{% trans %}permission_group_actions{% endtrans %}</th>
+		  </tr>
+		</thead>
+		<tfoot>
+		  <tr>
+			<th>{% trans %}permission_group_name{% endtrans %}</th>
+			<th>{% trans %}permission_group_actions{% endtrans %}</th>
+		  </tr>
+		</tfoot>
+		<tbody>
+		{% for entity in entities %}
+			<tr>
+			  <td>{{ entity.name }}</td>
+			  <td>
+				{% if is_expr_granted("hasRole('ROLE_ADD_EDIT_PERMISSION_GROUPS')") %}
+				<a href="{{ path('grouprole_edit', { 'id': entity.id }) }}"><i class="fa fa-pencil-square-o fa-2x"></i></a>
+				{% endif %}
+			  </td>
+			</tr>
+        {% endfor %}		  
+		  </tbody>
+		</table>
+	  </div>
+	</div>
+  </section>
+  
+{% if is_expr_granted("hasRole('ROLE_ADD_EDIT_PERMISSION_GROUPS')") %}
+<div class="row">
+  <div class="col-lg-12 text-center">
+	  <a href="{{ path('grouprole_new') }}" class="btn btn-info">
+		  {% trans %}permission_group_create{% endtrans %}
+	  </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
