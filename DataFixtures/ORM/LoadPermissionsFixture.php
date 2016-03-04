@@ -75,6 +75,17 @@ class LoadPermissionsFixture extends AbstractFixture implements OrderedFixtureIn
 		
         $manager->flush();
         
+        $roleAdmin = new Role();
+        $roleAdmin->setName("ROLE_ADMIN");
+        $manager->persist($roleAdmin);
+        $adminGroup = new GroupRole();
+        $adminGroup->setName("Grupo basico de los administradores");
+        $adminGroup->addGroupRole($roleAdmin);
+		$manager->persist($adminGroup);		
+        
+        $manager->flush();
+        
+        $this->addReference('group-admin', $adminGroup);
         $this->addReference('group-permisssion-groups', $permissionGroupsGroup);
         $this->addReference('group-users', $usersGroup);
         
