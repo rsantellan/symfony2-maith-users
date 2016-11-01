@@ -35,6 +35,7 @@ class LoadUserFixture extends AbstractFixture implements OrderedFixtureInterface
         $user->setFullName("Rodrigo Santellan");
         $user->fixtureAddUserGroup($this->getReference('group-permisssion-groups'));
         $user->fixtureAddUserGroup($this->getReference('group-users'));
+        $user->fixtureAddUserGroup($this->getReference('group-admin'));
         $manager->persist($user);
         
         $manager->flush();
