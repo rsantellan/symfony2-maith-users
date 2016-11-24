@@ -13,7 +13,7 @@ grouprole_new:
 grouprole_create:
     path:     /create
     defaults: { _controller: "MaithCommonUsersBundle:GroupRole:create" }
-    requirements: { _method: post }
+    methods:  [POST]
 
 grouprole_edit:
     path:     /{id}/edit
@@ -22,9 +22,9 @@ grouprole_edit:
 grouprole_update:
     path:     /{id}/update
     defaults: { _controller: "MaithCommonUsersBundle:GroupRole:update" }
-    requirements: { _method: post|put }
+    methods:  [POST, PUT]
 
 grouprole_delete:
     path:     /{id}/delete
     defaults: { _controller: "MaithCommonUsersBundle:GroupRole:delete" }
-    requirements: { _method: post|delete }
+    methods:  [POST, DELETE]

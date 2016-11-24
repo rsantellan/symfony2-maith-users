@@ -25,7 +25,7 @@ user_new:
 user_create:
     path:     /create
     defaults: { _controller: "MaithCommonUsersBundle:User:create" }
-    requirements: { _method: post }
+    methods:  [POST]
 
 user_edit:
     path:     /{id}/edit
@@ -34,12 +34,12 @@ user_edit:
 user_update:
     path:     /{id}/update
     defaults: { _controller: "MaithCommonUsersBundle:User:update" }
-    requirements: { _method: post|put }
+    methods:  [POST, PUT]
 
 user_delete:
     path:     /{id}/delete
     defaults: { _controller: "MaithCommonUsersBundle:User:delete" }
-    requirements: { _method: post|delete }
+    methods:  [POST, DELETE]
 
 user_block_unblock:
     path:     /{id}/{status}/block-unblock
